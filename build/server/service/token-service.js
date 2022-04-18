@@ -12,7 +12,7 @@ const jwt = require("jsonwebtoken");
 const tokenModel = require("../models/token-model");
 class TokenService {
     generateTokens(payload) {
-        const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET_TOKEN, { expiresIn: "30m" });
+        const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET_TOKEN, { expiresIn: "15m" });
         const refreshToken = jwt.sign(payload, process.env.JWT_ACCESS_REFRESH_TOKEN, { expiresIn: "30d" });
         return {
             accessToken,
@@ -47,12 +47,14 @@ class TokenService {
     }
     removeToken(refreshToken) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield tokenModel.deleteOne({ refreshToken });
+            const res = yield tokenModel.deleteOne({ refreshToken });
+            return res;
         });
     }
     findToken(refreshToken) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield tokenModel.findOne({ refreshToken });
+            const token = yield tokenModel.findOne({ refreshToken });
+            return token;
         });
     }
 }

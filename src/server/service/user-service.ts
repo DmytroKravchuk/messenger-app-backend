@@ -12,13 +12,13 @@ class UserService {
     async registration(email: string, password: string) {
         const candidate = await UserModel.findOne({email});
         if(candidate) {
-            throw ApiError.BadRequest(`User with this email: ${email}, already exist`)
+            throw ApiError.BadRequest(`User with this email: ${email}, already exist`);
         }
-        const hashPassword = bcrypt.hash(password, 3);
+        const hashPassword = await bcrypt.hash(password, 3);
         const activationLink = uuid.v4();
 
-        const user = await UserModel.create({email, password: hashPassword, activationLink});
-        await mailService.sendActivationMail(email, `${process.env.API_URL}/activate/${activationLink}`);
+        const user = await UserModel.create({email, password: hashPassword, activationLink, isActivated: true});
+        // await mailService.sendActivationMail(email, `${process.env.API_URL}/activate/${activationLink}`); Todo: will be implemented soon
         const userDto = new UserDto(user); // id, email, isActivated
         const tokens = tokenService.generateTokens({...userDto});
         await tokenService.saveToken(userDto.id, tokens.refreshToken);
@@ -63,7 +63,7 @@ class UserService {
 
     async refresh(refreshToken: String) {
         if(!refreshToken) {
-            throw new Error(ApiError.UnauthorizedError());
+            throw ApiError.UnauthorizedError();
         }
         const userData = tokenService.validateRefreshToken(refreshToken);
         const tokenFromDb = await tokenService.findToken(refreshToken);
