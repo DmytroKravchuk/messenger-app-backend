@@ -26,8 +26,8 @@ class UserService {
             }
             const hashPassword = yield bcrypt.hash(password, 3);
             const activationLink = uuid.v4();
-            const user = yield UserModel.create({ email, password: hashPassword, activationLink });
-            yield mailService.sendActivationMail(email, `${process.env.API_URL}/activate/${activationLink}`);
+            const user = yield UserModel.create({ email, password: hashPassword, activationLink, isActivated: true });
+            // await mailService.sendActivationMail(email, `${process.env.API_URL}/activate/${activationLink}`); Todo: will be implemented soon
             const userDto = new UserDto(user); // id, email, isActivated
             const tokens = tokenService.generateTokens(Object.assign({}, userDto));
             yield tokenService.saveToken(userDto.id, tokens.refreshToken);
@@ -68,7 +68,7 @@ class UserService {
     refresh(refreshToken) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!refreshToken) {
-                throw new Error(ApiError.UnauthorizedError());
+                throw ApiError.UnauthorizedError();
             }
             const userData = tokenService.validateRefreshToken(refreshToken);
             const tokenFromDb = yield tokenService.findToken(refreshToken);
