@@ -84,7 +84,8 @@ class UserService {
     }
     getAllUsers() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield UserModel.find();
+            const users = yield UserModel.find();
+            return users.map((user) => new UserDto(user));
         });
     }
 }

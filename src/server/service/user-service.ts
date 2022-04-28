@@ -11,7 +11,7 @@ const ApiError = require("../exceptions/api-error");
 class UserService {
     async registration(email: string, password: string) {
         const candidate = await UserModel.findOne({email});
-        if(candidate) {
+        if (candidate) {
             throw ApiError.BadRequest(`User with this email: ${email}, already exist`);
         }
         const hashPassword = await bcrypt.hash(password, 3);
@@ -31,7 +31,7 @@ class UserService {
 
     async activate(activationLink: string) {
         const user = await UserModel.findOne({activationLink});
-        if(!user) {
+        if (!user) {
             throw ApiError.BadRequest("Incorrect activation link");
         }
         user.isActivated = true;
@@ -40,11 +40,11 @@ class UserService {
 
     async login(email: String, password: String) {
         const user = await UserModel.findOne({email});
-        if(!user) {
+        if (!user) {
             throw ApiError.BadRequest("User is not found");
         }
         const isPasswordEquals = await bcrypt.compare(password, user.password);
-        if(!isPasswordEquals) {
+        if (!isPasswordEquals) {
             throw ApiError.BadRequest("Incorrect Password");
         }
         const userDto = new UserDto(user);
@@ -62,7 +62,7 @@ class UserService {
     }
 
     async refresh(refreshToken: String) {
-        if(!refreshToken) {
+        if (!refreshToken) {
             throw ApiError.UnauthorizedError();
         }
         const userData = tokenService.validateRefreshToken(refreshToken);
@@ -82,7 +82,8 @@ class UserService {
     }
 
     async getAllUsers() {
-       await UserModel.find();
+        const users = await UserModel.find();
+        return users.map((user: any) => new UserDto(user));
     }
 }
 
