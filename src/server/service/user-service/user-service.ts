@@ -1,23 +1,42 @@
-const UserModel = require("../models/user-model");
-const mailService = require("./mail-service");
+import {IRegistrationParams} from "./user-service.types";
+const registrationValidation = require("../validation/user-service-validation");
+const UserModel = require("../../models/user-model");
+const mailService = require("../mail-service");
 const bcrypt = require("bcrypt");
 const uuid = require("uuid");
 // @ts-ignore
-const tokenService = require("./token-service");
-const UserDto = require("../dtos/user-dto");
+const tokenService = require("../token-service");
+const UserDto = require("../../dtos/user-dto");
 // @ts-ignore
-const ApiError = require("../exceptions/api-error");
+const ApiError = require("../../exceptions/api-error");
 
 class UserService {
-    async registration(email: string, password: string) {
+    async registration(params: IRegistrationParams) {
+        const {
+            email,
+            password,
+            confirmPassword,
+            firstName,
+            secondName,
+        } = params;
+
         const candidate = await UserModel.findOne({email});
         if (candidate) {
             throw ApiError.BadRequest(`User with this email: ${email}, already exist`);
         }
+        registrationValidation(params);
         const hashPassword = await bcrypt.hash(password, 3);
+        const hashConfirmPassword = await bcrypt.hash(confirmPassword, 3);
         const activationLink = uuid.v4();
 
-        const user = await UserModel.create({email, password: hashPassword, activationLink, isActivated: true});
+        const user = await UserModel.create({
+            email,
+            firstName,
+            secondName,
+            password: hashPassword,
+            confirmPassword: hashConfirmPassword,
+            activationLink, isActivated: true
+        });
         // await mailService.sendActivationMail(email, `${process.env.API_URL}/activate/${activationLink}`); Todo: will be implemented soon
         const userDto = new UserDto(user); // id, email, isActivated
         const tokens = tokenService.generateTokens({...userDto});

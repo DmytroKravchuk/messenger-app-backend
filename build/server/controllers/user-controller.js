@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-const userService = require("../service/user-service");
+const userService = require("../service/user-service/user-service");
 const { validationResult } = require("express-validator");
 // @ts-ignore
 const ApiError = require("../exceptions/api-error");
@@ -20,8 +20,7 @@ class UserController {
                 if (!errors.isEmpty()) {
                     return next(ApiError.BadRequest("Validation error...", errors.array()));
                 }
-                const { email, password } = req.body;
-                const userData = yield userService.registration(email, password);
+                const userData = yield userService.registration(req.body);
                 res.cookie("refreshToken", userData.refreshToken, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true });
                 return res.json(userData);
             }

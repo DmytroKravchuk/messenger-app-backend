@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+const registrationValidation = require("./validation/user-service-validation");
 const UserModel = require("../models/user-model");
 const mailService = require("./mail-service");
 const bcrypt = require("bcrypt");
@@ -18,15 +19,25 @@ const UserDto = require("../dtos/user-dto");
 // @ts-ignore
 const ApiError = require("../exceptions/api-error");
 class UserService {
-    registration(email, password) {
+    registration(params) {
         return __awaiter(this, void 0, void 0, function* () {
+            const { email, password, confirmPassword, firstName, secondName, } = params;
             const candidate = yield UserModel.findOne({ email });
             if (candidate) {
                 throw ApiError.BadRequest(`User with this email: ${email}, already exist`);
             }
+            registrationValidation(params);
             const hashPassword = yield bcrypt.hash(password, 3);
+            const hashConfirmPassword = yield bcrypt.hash(confirmPassword, 3);
             const activationLink = uuid.v4();
-            const user = yield UserModel.create({ email, password: hashPassword, activationLink, isActivated: true });
+            const user = yield UserModel.create({
+                email,
+                name,
+                secondName,
+                password: hashPassword,
+                confirmPassword: hashConfirmPassword,
+                activationLink, isActivated: true
+            });
             // await mailService.sendActivationMail(email, `${process.env.API_URL}/activate/${activationLink}`); Todo: will be implemented soon
             const userDto = new UserDto(user); // id, email, isActivated
             const tokens = tokenService.generateTokens(Object.assign({}, userDto));
