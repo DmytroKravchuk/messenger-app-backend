@@ -61,9 +61,9 @@ class UserController {
         }
     }
 
-    async getUsers(req: any, res: any, next: any) {
+    async postUsers(req: any, res: any, next: any) {
         try {
-            const users = await userService.getAllUsers();
+            const users = await userService.postUsers(req.body);
             res.json(users);
         } catch (e: any) {
             next(e);

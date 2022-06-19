@@ -1,7 +1,6 @@
-import {IRegistrationParams} from "./user-service.types";
+import {IRegistrationParams, IUsersSearchParams} from "./user-service.types";
 const registrationValidation = require("../validation/user-service-validation");
 const UserModel = require("../../models/user-model");
-const mailService = require("../mail-service");
 const bcrypt = require("bcrypt");
 const uuid = require("uuid");
 // @ts-ignore
@@ -15,7 +14,6 @@ class UserService {
         const {
             email,
             password,
-            confirmPassword,
             firstName,
             secondName,
         } = params;
@@ -26,7 +24,6 @@ class UserService {
         }
         registrationValidation(params);
         const hashPassword = await bcrypt.hash(password, 3);
-        const hashConfirmPassword = await bcrypt.hash(confirmPassword, 3);
         const activationLink = uuid.v4();
 
         const user = await UserModel.create({
@@ -34,10 +31,8 @@ class UserService {
             firstName,
             secondName,
             password: hashPassword,
-            confirmPassword: hashConfirmPassword,
             activationLink, isActivated: true
         });
-        // await mailService.sendActivationMail(email, `${process.env.API_URL}/activate/${activationLink}`); Todo: will be implemented soon
         const userDto = new UserDto(user); // id, email, isActivated
         const tokens = tokenService.generateTokens({...userDto});
         await tokenService.saveToken(userDto.id, tokens.refreshToken);
@@ -100,8 +95,19 @@ class UserService {
         }
     }
 
-    async getAllUsers() {
-        const users = await UserModel.find();
+    async postUsers(data: IUsersSearchParams) {
+        const {search, limit} = data;
+        const users = await UserModel.find().or([
+            {
+                firstName: { $regex: search }
+            },
+            {
+                secondName: { $regex: search }
+            },
+            {
+                email: { $regex: search }
+            }
+        ]).limit(limit || 20);
         return users.map((user: any) => new UserDto(user));
     }
 }

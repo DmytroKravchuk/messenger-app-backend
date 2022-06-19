@@ -5,3 +5,8 @@ export interface IRegistrationParams {
     firstName: string;
     secondName: string;
 }
+
+export interface IUsersSearchParams {
+    search: string;
+    limit: number;
+}
