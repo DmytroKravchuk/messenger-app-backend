@@ -31,7 +31,9 @@ class UserService {
             firstName,
             secondName,
             password: hashPassword,
-            activationLink, isActivated: true
+            activationLink,
+            isActivated: true,
+            contacts: []
         });
         const userDto = new UserDto(user); // id, email, isActivated
         const tokens = tokenService.generateTokens({...userDto});
