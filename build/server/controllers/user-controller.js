@@ -80,10 +80,10 @@ class UserController {
             }
         });
     }
-    getUsers(req, res, next) {
+    postUsers(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const users = yield userService.getAllUsers();
+                const users = yield userService.postUsers(req.body);
                 res.json(users);
             }
             catch (e) {
