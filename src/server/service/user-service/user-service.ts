@@ -1,11 +1,13 @@
 import {IRegistrationParams, IUsersSearchParams} from "./user-service.types";
 const registrationValidation = require("../validation/user-service-validation");
 const UserModel = require("../../models/user-model");
+const RoomModel = require("../../models/room-model");
 const bcrypt = require("bcrypt");
 const uuid = require("uuid");
 // @ts-ignore
 const tokenService = require("../token-service");
 const UserDto = require("../../dtos/user-dto");
+const RoomDto = require("../../dtos/room-dto");
 // @ts-ignore
 const ApiError = require("../../exceptions/api-error");
 
@@ -26,6 +28,12 @@ class UserService {
         const hashPassword = await bcrypt.hash(password, 3);
         const activationLink = uuid.v4();
 
+        const room = await RoomModel.create({
+            name: "Saved Messages",
+            usersIds: [],
+            messages: []
+        });
+
         const user = await UserModel.create({
             email,
             firstName,
@@ -33,15 +41,22 @@ class UserService {
             password: hashPassword,
             activationLink,
             isActivated: true,
-            contacts: []
+            roomsIds: []
         });
-        const userDto = new UserDto(user); // id, email, isActivated
+
+        await RoomModel.updateOne(room, {$set: {usersIds: [user._id]}});
+        await UserModel.updateOne(user, {$set: {roomsIds: [room._id]}})
+
+        room.usersIds = [user._id]
+        user.roomsIds = [room._id];
+        const userDto = new UserDto(user);
         const tokens = tokenService.generateTokens({...userDto});
-        await tokenService.saveToken(userDto.id, tokens.refreshToken);
+        await tokenService.saveToken(userDto._id, tokens.refreshToken);
 
         return {
             ...tokens,
-            user: userDto
+            user: userDto,
+            rooms: [new RoomDto(room)]
         }
     }
 
@@ -65,11 +80,15 @@ class UserService {
         }
         const userDto = new UserDto(user);
         const tokens = tokenService.generateTokens({...userDto});
-        await tokenService.saveToken(userDto.id, tokens.refreshToken);
+        await tokenService.saveToken(userDto._id, tokens.refreshToken);
+
+        const { roomsIds } = userDto;
+        const rooms = await RoomModel.find({'_id': {$in: roomsIds}})
 
         return {
             ...tokens,
-            user: userDto
+            user: userDto,
+            rooms: rooms.map((item: any) => new RoomDto(item))
         }
     }
 
@@ -86,14 +105,18 @@ class UserService {
         if (!userData || !tokenFromDb) {
             throw ApiError.UnauthorizedError();
         }
-        const user = await UserModel.findById(userData.id);
+        const user = await UserModel.findById(userData._id);
         const userDto = new UserDto(user);
         const tokens = tokenService.generateTokens({...userDto});
-        await tokenService.saveToken(userDto.id, tokens.refreshToken);
+        await tokenService.saveToken(userDto._id, tokens.refreshToken);
+
+        const { roomsIds } = userDto;
+        const rooms = await RoomModel.find({'_id': {$in: roomsIds}})
 
         return {
             ...tokens,
-            user: userDto
+            user: userDto,
+            rooms: rooms.map((item: any) => new RoomDto(item))
         }
     }
 

@@ -8,7 +8,7 @@ const UserSchema = new Schema({
     password: {type: String, required: true},
     isActivated: {type: Boolean, default: false},
     activationLink: {type: String},
-    contacts: {type: Array, required: true},
+    roomsIds: [{type: Schema.Types.ObjectId}],
 });
 
 module.exports = model("User", UserSchema);

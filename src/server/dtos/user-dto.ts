@@ -1,15 +1,15 @@
 module.exports = class UserDto {
+    _id;
     email;
     firstName;
     secondName;
-    id;
-    contacts;
+    roomsIds;
 
     constructor(model: any) {
         this.email = model.email;
-        this.id = model._id;
+        this._id = model._id;
         this.firstName = model.firstName;
         this.secondName = model.secondName;
-        this.contacts = model.contacts;
+        this.roomsIds = model.roomsIds;
     }
 }

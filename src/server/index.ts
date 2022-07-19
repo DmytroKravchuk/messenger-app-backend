@@ -8,7 +8,9 @@ const errorMiddleware = require("./middlewares/error-middleware");
 import express, {Application, Request, Response, NextFunction} from "express";
 
 const PORT = process.env.PORT || 5000;
-const app: Application = express();
+
+const app: any = express();
+const expressWs = require('express-ws')(app);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -25,12 +27,21 @@ export const initServer = async () => {
             console.log("connect to DB has been successfully")
         }).catch((e: any) => {console.log(e)});
 
-        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
         app.get('/', (req: Request, res: Response, next: NextFunction) => {
             res.send({
                 "test": "Hello!"
             })
         });
+
+        app.ws('/chat', (ws: any, req: any) => {
+            console.log('Connection to the chat was successful!');
+            ws.send('Connection to the chat was successful!');
+            app.on('message', (msg: String) => {
+                console.log(msg);
+            })
+        })
+
+        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
     } catch (e) {
         console.log(e);
@@ -38,5 +49,5 @@ export const initServer = async () => {
 }
 
 module.exports = {
-    initServer: initServer
+    initServer,
 }
